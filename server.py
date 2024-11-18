@@ -19,6 +19,7 @@ from bottle import Bottle
 from image_db import ImageDb
 from image_db import TIME_FORMAT
 
+# dummy comment to induce PR
 app = application = Bottle()
 
 # Configure logging
