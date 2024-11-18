@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        disableConcurrentBuilds() // Prevents concurrent builds within the same branch
+    }
+
     environment {
         BRANCH_NAME = "${env.CHANGE_BRANCH ?: env.BRANCH_NAME}"
         PARENT_PATH = "/var/jenkins_home/workspace"
@@ -8,10 +12,20 @@ pipeline {
     }
 
     stages {
+        stage('Queued Build') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') { // Timeout after 2 minutes
+                    lock(resource: 'pipeline_build_queue') {
+                        echo 'Acquired lock for pipeline_build_queue. Proceeding with build stages...'
+                    }
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
+                // Use a conditional to check if this is a PR
                 script {
-                    // Use a conditional to check if this is a PR
                     if (env.CHANGE_ID) {
                         // Fetch and checkout the PR branch
                         checkout([
@@ -50,8 +64,8 @@ pipeline {
 
         stage('Copy non-tracked files') {
             steps {
+                // Copy non-tracked files from web-asset-server-ci to the found directory
                 script {
-                    // Copy non-tracked files from web-asset-server-ci to the found directory
                     sh "cp ${PARENT_PATH}/web-asset-server-ci/settings.py ${env.FOUND_DIR}/settings.py"
                     sh "cp ${PARENT_PATH}/web-asset-server-ci/server_jenkins.sh ${env.FOUND_DIR}/server_jenkins.sh"
                     sh "cp ${PARENT_PATH}/web-asset-server-ci/server_jenkins_config.sh ${env.FOUND_DIR}/server_jenkins_config.sh"
