@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        disableConcurrentBuilds()
+    }
+
     environment {
         BRANCH_NAME = "${env.CHANGE_BRANCH ?: env.BRANCH_NAME}"
         PARENT_PATH = "/var/jenkins_home/workspace"
